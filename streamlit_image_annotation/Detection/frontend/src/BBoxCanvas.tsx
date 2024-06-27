@@ -64,10 +64,10 @@ const BBoxCanvas = (props: BBoxCanvasLayerProps) => {
 
   const isPointInRect = (pointX: number, pointY: number, rect: Rectangle): boolean => {
     return (
-      pointX >= rect.x * scale &&
-      pointX <= (rect.x + rect.width) * scale &&
-      pointY >= rect.y * scale &&
-      pointY <= (rect.y + rect.height) * scale
+      pointX >= rect.x * scale - 5 &&
+      pointX <= (rect.x + rect.width) * scale + 5 &&
+      pointY >= rect.y * scale - 5 &&
+      pointY <= (rect.y + rect.height) * scale + 5
     );
   };
 
