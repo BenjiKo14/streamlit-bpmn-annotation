@@ -161,12 +161,20 @@ const Detection = ({ args, theme }: ComponentProps) => {
             <VStack>
               <Box>
                 <Text fontSize='sm'>Mode</Text>
-                <Select value={mode} onChange={(e) => { setMode(e.target.value) }}>
-                  {['Add', 'Modify'].map(
-                    (m) =>
-                      <option key={m} value={m}>{m}</option>
-                  )}
-                </Select>
+                <HStack spacing="10px">
+                  <Button
+                    colorScheme={mode === 'Add' ? 'blue' : undefined}
+                    onClick={() => setMode('Add')}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    colorScheme={mode === 'Modify' ? 'blue' : undefined}
+                    onClick={() => setMode('Modify')}
+                  >
+                    Modify
+                  </Button>
+                </HStack>
                 <Text fontSize='sm'>Class</Text>
                 <Select value={label} onChange={handleClassSelectorChange}>
                   {label_list.map(
