@@ -50,15 +50,11 @@ const BBoxCanvas = (props: BBoxCanvasLayerProps) => {
   const [adding, setAdding] = useState<number[] | null>(null);
 
   const checkDeselect = (e: any) => {
-    if (!(e.target instanceof Konva.Rect)) {
-      if (selectedId === null) {
-        if (mode === "Add") {
-          const pointer = e.target.getStage().getPointerPosition();
-          setAdding([pointer.x, pointer.y, pointer.x, pointer.y]);
-        }
-      } else {
-        setSelectedId(null);
-      }
+    if (mode === "Add") {
+      const pointer = e.target.getStage().getPointerPosition();
+      setAdding([pointer.x, pointer.y, pointer.x, pointer.y]);
+    } else if (!(e.target instanceof Konva.Rect)) {
+      setSelectedId(null);
     }
   };
 
@@ -78,30 +74,32 @@ const BBoxCanvas = (props: BBoxCanvasLayerProps) => {
   };
 
   const handleStageMouseDown = (e: any) => {
-    const pointer = e.target.getStage().getPointerPosition();
-    const overlappingRects = rectangles.filter((r) => isPointInRect(pointer.x, pointer.y, r));
-    if (mode === "Modify") {
-      if (overlappingRects.length > 0) {
-        const smallestRect = overlappingRects.reduce((prev, curr) =>
-          getSmallestRectangle(prev, curr)
-        );
-        if (selectedId === smallestRect.id) {
-          // If the clicked element is already selected, keep it selected
-          setSelectedId(smallestRect.id);
+    if (mode !== "Add") {
+      const pointer = e.target.getStage().getPointerPosition();
+      const overlappingRects = rectangles.filter((r) => isPointInRect(pointer.x, pointer.y, r));
+      if (mode === "Modify") {
+        if (overlappingRects.length > 0) {
+          const smallestRect = overlappingRects.reduce((prev, curr) =>
+            getSmallestRectangle(prev, curr)
+          );
+          if (selectedId === smallestRect.id) {
+            // If the clicked element is already selected, keep it selected
+            setSelectedId(smallestRect.id);
+          } else {
+            // Otherwise, select the smallest overlapping rectangle
+            setSelectedId(smallestRect.id);
+            const rects = rectangles.slice();
+            const lastIndex = rects.length - 1;
+            const lastItem = rects[lastIndex];
+            const index = rects.findIndex((r) => r.id === smallestRect.id);
+            rects[lastIndex] = rects[index];
+            rects[index] = lastItem;
+            setRectangles(rects);
+            setLabel(smallestRect.label);
+          }
         } else {
-          // Otherwise, select the smallest overlapping rectangle
-          setSelectedId(smallestRect.id);
-          const rects = rectangles.slice();
-          const lastIndex = rects.length - 1;
-          const lastItem = rects[lastIndex];
-          const index = rects.findIndex((r) => r.id === smallestRect.id);
-          rects[lastIndex] = rects[index];
-          rects[index] = lastItem;
-          setRectangles(rects);
-          setLabel(smallestRect.label);
+          setSelectedId(null);
         }
-      } else {
-        setSelectedId(null);
       }
     } else {
       checkDeselect(e);
@@ -144,16 +142,18 @@ const BBoxCanvas = (props: BBoxCanvasLayerProps) => {
   }, [rectangles, image_size, setRectangles]);
 
   const handleClick = (rect: Rectangle) => {
-    if (selectedId === rect.id) {
-      // If the clicked element is already selected, keep it selected
-      setSelectedId(rect.id);
-    } else {
-      // Otherwise, handle the click logic
-      const pointer = {
-        x: (rect.x + rect.width / 2) * scale,
-        y: (rect.y + rect.height / 2) * scale,
-      };
-      handleStageMouseDown({ target: { getStage: () => ({ getPointerPosition: () => pointer }) } });
+    if (mode !== "Add") {
+      if (selectedId === rect.id) {
+        // If the clicked element is already selected, keep it selected
+        setSelectedId(rect.id);
+      } else {
+        // Otherwise, handle the click logic
+        const pointer = {
+          x: (rect.x + rect.width / 2) * scale,
+          y: (rect.y + rect.height / 2) * scale,
+        };
+        handleStageMouseDown({ target: { getStage: () => ({ getPointerPosition: () => pointer }) } });
+      }
     }
   };
 
@@ -206,11 +206,13 @@ const BBoxCanvas = (props: BBoxCanvasLayerProps) => {
               isSelected={mode === "Modify" && rect.id === selectedId}
               onClick={() => handleClick(rect)}
               onChange={(newAttrs: Rectangle) => {
-                const rects = rectangles.slice();
-                const oldAttrs = { ...rects[i] };
-                rects[i] = newAttrs;
-                setRectangles(rects);
-                setUndoStack([...undoStack, { action: 'move', oldRect: oldAttrs, newRect: newAttrs }]);
+                if (mode !== "Add") {
+                  const rects = rectangles.slice();
+                  const oldAttrs = { ...rects[i] };
+                  rects[i] = newAttrs;
+                  setRectangles(rects);
+                  setUndoStack([...undoStack, { action: 'move', oldRect: oldAttrs, newRect: newAttrs }]);
+                }
               }}
             />
           );
